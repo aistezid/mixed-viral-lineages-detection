@@ -1,3 +1,5 @@
+import os
+
 REF = "references/wmv6-cms001_028_alco-ref.fasta"
 VCF_DIR = "vcf"
 SAMPLES = [
@@ -6,8 +8,8 @@ SAMPLES = [
 ]
 
 rule all:
-    input:
-        expand("output/{sample}_report.tsv", sample=SAMPLES)
+	input:
+		expand("output/{sample}_report.tsv", sample=SAMPLES)
 
 rule fastqdump_pe:
 	input:
@@ -16,7 +18,7 @@ rule fastqdump_pe:
 		"samples/paired/{sample}/{sample}_1.fastq",
 		"samples/paired/{sample}/{sample}_2.fastq"
 	conda:
-        "envs/fastq.yaml"
+		"envs/fastq.yaml"
 	shell:
 		"fastq-dump --split-files {input} --outdir samples/paired/{wildcards.sample}"
 
@@ -26,7 +28,7 @@ rule fastqdump_se:
 	output:
 		"samples/single/{sample}/{sample}.fastq"
 	conda:
-        "envs/fastq.yaml"
+		"envs/fastq.yaml"
 	shell:
 		"fastq-dump {input} --outdir samples/single/{wildcards.sample}"
 
@@ -44,7 +46,7 @@ rule trim_reads_pe:
 		quality_threshold=config.get("quality_threshold", 20)
 	threads: 4
 	conda:
-        "envs/fastq.yaml"
+		"envs/fastq.yaml"
 	shell:
 		"""
 		mkdir -p trimmed/paired
@@ -74,7 +76,7 @@ rule trim_reads_se:
 		quality_threshold=config.get("quality_threshold", 20)
 	threads: 4
 	conda:
-        "envs/fastq.yaml"
+		"envs/fastq.yaml"
 	shell:
 		"""
 		mkdir -p trimmed/single
@@ -99,7 +101,7 @@ rule map_to_reference_pe:
 		bai="mapped/{sample}/{sample}_mapped.bam.bai"
 	threads: 4
 	conda:
-        "envs/bwa_samtools.yaml"
+		"envs/bwa_samtools.yaml"
 	shell:
 		"""
 		mkdir -p mapped/{wildcards.sample}
@@ -119,7 +121,7 @@ rule map_to_reference_se:
 		bai="mapped/{sample}/{sample}_mapped.bam.bai"
 	threads:4
 	conda:
-        "envs/bwa_samtools.yaml"
+		"envs/bwa_samtools.yaml"
 	shell:
 		"""
 		mkdir -p mapped/{wildcards.sample}
@@ -138,7 +140,7 @@ rule vcf_calling:
 	output:
 		vcf="vcf/{sample}/{sample}.vcf.gz"
 	conda:
-        "envs/bcftools.yaml"
+		"envs/bcftools.yaml"
 	shell:
 		"""
 		mkdir -p vcf/{wildcards.sample}

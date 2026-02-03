@@ -18,4 +18,18 @@ The following filtering thresholds are applied during analysis:
 
 - Alternative alleles are considered only if they represent at least 20% of reads at a given position
 
-These thresholds are intended to reduce noise from low-quality reads and low-confidence variants.
+These thresholds are intended to reduce noise from low-quality reads and low-confidence variants. All thresholds can be adjusted.
+
+## Usage 
+
+Before running the workflow, ensure that:
+
+- Snakemake is installed
+
+- Conda is available
+
+- Input SRA files are organised as described above
+
+To execute the pipeline, run:
+
+snakemake --use-conda
