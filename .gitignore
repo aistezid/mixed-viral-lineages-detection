@@ -1,0 +1,10 @@
+results/
+logs/
+.tmp/
+*.bam
+*.sam
+*.fastq
+
+# Outputs
+output/
+vcf/
