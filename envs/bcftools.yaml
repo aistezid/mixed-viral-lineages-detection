@@ -1,0 +1,10 @@
+name: bcftools
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bcftools=1.18
+  - samtools=1.18
+  - pysam
+  - biopython
+  - python=3.9
