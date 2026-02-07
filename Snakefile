@@ -1,15 +1,36 @@
 import os
+import pandas as pd
 
 REF = "references/wmv6-cms001_028_alco-ref.fasta"
 VCF_DIR = "vcf"
-SAMPLES = [
-	d for d in os.listdir(VCF_DIR)
-	if os.path.isdir(os.path.join(VCF_DIR, d))
-]
+samples = pd.read_csv(
+	config["sra_list"],
+	sep=",",
+	header=None,
+	names=["SAMPLES", "type"],
+	dtype=str,
+	keep_default_na=False)
+
+paired_samples = samples[samples["type"] == "paired"]["SAMPLES"].tolist()
+single_samples = samples[samples["type"] == "single"]["SAMPLES"].tolist()
+
+SAMPLES=paired_samples + single_samples
 
 rule all:
 	input:
-		expand("output/{sample}_report.tsv", sample=SAMPLES)
+		expand("assembled_seq/{sample}_alt.fasta", sample=SAMPLES)
+
+rule download_sra_pe:
+	output:
+		"samples/paired/{sample}/{sample}.sra"
+	shell:
+		"prefetch {wildcards.sample}"
+
+rule download_sra_se:
+	output:
+		"samples/single/{sample}/{sample}.sra"
+	shell:
+		"prefetch {wildcards.sample}"
 
 rule fastqdump_pe:
 	input:
@@ -42,8 +63,8 @@ rule trim_reads_pe:
 		report_html="trimmed/paired/{sample}/fastq_report.html",
 		report_json="trimmed/paired/{sample}/fastq_report.json"
 	params:
-		min_length=config.get("min_read_length", 50),
-		quality_threshold=config.get("quality_threshold", 20)
+		min_length=config["min_read_length"],
+		quality_threshold=config["quality_threshold"]
 	threads: 4
 	conda:
 		"envs/fastq.yaml"
@@ -72,8 +93,8 @@ rule trim_reads_se:
 		report_html="trimmed/single/{sample}/fastq_report.html",
 		report_json="trimmed/single/{sample}/fastq_report.json"
 	params:
-		min_length=config.get("min_read_length", 50),
-		quality_threshold=config.get("quality_threshold", 20)
+		min_length=config["min_read_length"],
+		quality_threshold=config["quality_threshold"]
 	threads: 4
 	conda:
 		"envs/fastq.yaml"
@@ -97,8 +118,8 @@ rule map_to_reference_pe:
 		r1="trimmed/paired/{sample}/{sample}_1_trimmed.fastq",
 		r2="trimmed/paired/{sample}/{sample}_2_trimmed.fastq"
 	output:
-		bam="mapped/{sample}/{sample}_mapped.bam",
-		bai="mapped/{sample}/{sample}_mapped.bam.bai"
+		bam="mapped/{sample}/{sample}_pe_mapped.bam",
+		bai="mapped/{sample}/{sample}_pe_mapped.bam.bai"
 	threads: 4
 	conda:
 		"envs/bwa_samtools.yaml"
@@ -117,8 +138,8 @@ rule map_to_reference_se:
 	input:
 		single="trimmed/single/{sample}/{sample}_trimmed.fastq"
 	output:
-		bam="mapped/{sample}/{sample}_mapped.bam",
-		bai="mapped/{sample}/{sample}_mapped.bam.bai"
+		bam="mapped/{sample}/{sample}_se_mapped.bam",
+		bai="mapped/{sample}/{sample}_se_mapped.bam.bai"
 	threads:4
 	conda:
 		"envs/bwa_samtools.yaml"
@@ -133,10 +154,18 @@ rule map_to_reference_se:
 		samtools index {output.bam}
 		"""
 
+def get_bam(sample):
+	pe = f"mapped/{sample}/{sample}_pe_mapped.bam"
+	se = f"mapped/{sample}/{sample}_se_mapped.bam"
+
+	if os.path.exists(pe):
+		return pe
+	elif os.path.exists(se):
+		return se
+
 rule vcf_calling:
 	input:
-		bam="mapped/{sample}/{sample}_mapped.bam",
-		bai="mapped/{sample}/{sample}_mapped.bam.bai"
+		bam=get_bam
 	output:
 		vcf="vcf/{sample}/{sample}.vcf.gz"
 	conda:
@@ -158,9 +187,25 @@ rule analyze_vcfs:
 	output:
 		"output/{sample}_report.tsv"
 	params:
-		min_depth=10,
-		min_alt_freq=0.2
+		min_depth=config["min_depth"],
+		min_alt_freq=config["min_alt_freq"]
 	conda:
 		"envs/vcf_analysis.yaml"
 	script:
 		"scripts/VCF_frequence_analysis.py"
+
+rule generate_fasta:
+	input:
+		ref = REF,
+		vcf_calc = "output/{sample}_report.tsv"
+	output:
+		fasta = "assembled_seq/{sample}_alt.fasta"
+	conda:
+		"envs/vcf_analysis.yaml"
+	params:
+		min_depth=config["min_depth_assembly"],
+		segment_number=config["segment_number"],
+		complete_genome=config["complete_genome"],
+		max_N_fraction = config["max_N_fraction"]
+	script:
+		"scripts/snakemake-consensus.py"

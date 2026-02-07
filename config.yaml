@@ -1,0 +1,16 @@
+# Load SRA list
+sra_list: "sra_list.txt"
+
+# Read trimming parameters
+min_read_length: 50 # minimum read length 
+quality_threshold: 20 # minimum phred quality treshold
+
+# Variant calling parameters
+min_depth: 10 # minimum number of reads per site
+min_alt_freq: 0.2 # minimum frequency of alternative allele 
+
+# Sequence assembly parameters
+min_depth_assembly: 10 # minimum number of reads per site
+segment_number: 8 # number of segments for complete genome
+complete_genome : True # True or False, choose if assemble only samples with all segments
+max_N_fraction: 0.05 # number of ambiguous nucleotides allowed per sequenceS
