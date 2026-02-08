@@ -3,8 +3,8 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - bcftools=1.18
-  - samtools=1.18
+  - bcftools=1.22
+  - samtools=1.22.1
   - pysam
   - biopython
-  - python=3.9
+  - python=3.11

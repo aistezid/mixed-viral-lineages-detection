@@ -154,14 +154,11 @@ rule map_to_reference_se:
 		samtools index {output.bam}
 		"""
 
-def get_bam(sample):
-	pe = f"mapped/{sample}/{sample}_pe_mapped.bam"
-	se = f"mapped/{sample}/{sample}_se_mapped.bam"
-
-	if os.path.exists(pe):
-		return pe
-	elif os.path.exists(se):
-		return se
+def get_bam(wildcards):
+	return [
+		f"mapped/{wildcards.sample}/{wildcards.sample}_pe_mapped.bam",
+		f"mapped/{wildcards.sample}/{wildcards.sample}_se_mapped.bam",
+		]
 
 rule vcf_calling:
 	input:
